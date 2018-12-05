@@ -49,7 +49,7 @@ function Checkpoint-Lab {
 
         if ($runningNodes -and $Force) {
 
-            NewLabVMSnapshot -Name $nodes.NodeDisplayName -SnapshotName $SnapshotName;
+            New-LabVMSnapshot -Name $nodes.NodeDisplayName -SnapshotName $SnapshotName;
         }
         elseif ($runningNodes) {
 
@@ -62,10 +62,10 @@ function Checkpoint-Lab {
 
             $nodesDisplayString = [System.String]::Join(', ', $nodes.NodeDisplayName);
             $shouldProcessMessage = $localized.PerformingOperationOnTarget -f 'Checkpoint-Lab', $node.Name;
-            $verboseProcessMessage = GetFormattedMessage -Message ($localized.CreatingVirtualMachineSnapshot -f $nodesDisplayString, $SnapshotName);
+            $verboseProcessMessage = Get-FormattedMessage -Message ($localized.CreatingVirtualMachineSnapshot -f $nodesDisplayString, $SnapshotName);
             if ($PSCmdlet.ShouldProcess($verboseProcessMessage, $shouldProcessMessage, $localized.ShouldProcessWarning)) {
 
-                NewLabVMSnapshot -Name $nodes.NodeDisplayName -SnapshotName $SnapshotName;
+                New-LabVMSnapshot -Name $nodes.NodeDisplayName -SnapshotName $SnapshotName;
             }
         }
 

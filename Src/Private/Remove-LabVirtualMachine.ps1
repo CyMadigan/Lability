@@ -1,62 +1,81 @@
-function RemoveLabVirtualMachine {
-<#
-    .SYNOPSIS
-        Removes the current configuration a virtual machine.
-    .DESCRIPTION
-        Invokes/sets a virtual machine configuration using the xVMHyperV DSC resource.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [System.String] $Name,
+function Remove-LabVirtualMachine {
+    <#
+        .SYNOPSIS
+            Deletes a lab virtual machine.
+    #>
+        [CmdletBinding(SupportsShouldProcess)]
+        param (
+            ## Specifies the lab virtual machine/node name.
+            [Parameter(Mandatory, ValueFromPipeline)]
+            [ValidateNotNullOrEmpty()]
+            [System.String] $Name,
 
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [System.String[]] $SwitchName,
+            ## Specifies a PowerShell DSC configuration document (.psd1) containing the lab configuration.
+            [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+            [System.Collections.Hashtable]
+            [Microsoft.PowerShell.DesiredStateConfiguration.ArgumentToConfigurationDataTransformationAttribute()]
+            $ConfigurationData,
 
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [System.String] $Media,
+            ## Include removal of virtual switch(es). By default virtual switches are not removed.
+            [Parameter(ValueFromPipelineByPropertyName)]
+            [System.Management.Automation.SwitchParameter] $RemoveSwitch
+        )
+        process {
 
-        [Parameter(Mandatory)]
-        [System.UInt64] $StartupMemory,
+            if (-not (Test-LabNode -Name $Name -ConfigurationData $ConfigurationData)) {
 
-        [Parameter(Mandatory)]
-        [System.UInt64] $MinimumMemory,
+                throw ($localized.CannotLocateNodeError -f $Name);
+            }
+            $node = Resolve-NodePropertyValue -NodeName $Name -ConfigurationData $ConfigurationData;
+            $nodeDisplayName = $node.NodeDisplayName;
 
-        [Parameter(Mandatory)]
-        [System.UInt64] $MaximumMemory,
+            # Revert to oldest snapshot prior to VM removal to speed things up
+            Get-VMSnapshot -VMName $nodeDisplayName -ErrorAction SilentlyContinue |
+                Sort-Object -Property CreationTime |
+                    Select-Object -First 1 |
+                        Restore-VMSnapshot -Confirm:$false;
 
-        [Parameter(Mandatory)]
-        [System.Int32] $ProcessorCount,
+            Remove-LabVMSnapshot -Name $nodeDisplayName;
 
-        [Parameter()]
-        [AllowNull()]
-        [System.String[]] $MACAddress,
+            $environmentSwitchNames = @();
+            foreach ($switchName in $node.SwitchName) {
 
-        [Parameter()]
-        [System.Boolean] $SecureBoot,
+                $environmentSwitchNames += Resolve-LabEnvironmentName -Name $switchName -ConfigurationData $ConfigurationData;
+            }
 
-        [Parameter()]
-        [System.Boolean] $GuestIntegrationServices,
+            Write-Verbose -Message ($localized.RemovingNodeConfiguration -f 'VM', $nodeDisplayName);
+            $clearLabVirtualMachineParams = @{
+                Name = $nodeDisplayName;
+                SwitchName = $environmentSwitchNames;
+                Media = $node.Media;
+                StartupMemory = $node.StartupMemory;
+                MinimumMemory = $node.MinimumMemory;
+                MaximumMemory = $node.MaximumMemory;
+                MACAddress = $node.MACAddress;
+                ProcessorCount = $node.ProcessorCount;
+                ConfigurationData = $ConfigurationData;
+            }
+            Clear-LabVirtualMachine @clearLabVirtualMachineParams;
 
-        ## Specifies a PowerShell DSC configuration document (.psd1) containing the lab configuration.
-        [Parameter(ValueFromPipelineByPropertyName)]
-        [System.Collections.Hashtable]
-        [Microsoft.PowerShell.DesiredStateConfiguration.ArgumentToConfigurationDataTransformationAttribute()]
-        $ConfigurationData
-    )
-    process {
+            ## Remove the OS disk
+            Write-Verbose -Message ($localized.RemovingNodeConfiguration -f 'VHD/X', "$($nodeDisplayName).vhd/vhdx");
+            $removeLabVMDiskParams = @{
+                Name = $nodeDisplayName;
+                NodeName = $Name;
+                Media = $node.Media;
+                ConfigurationData = $ConfigurationData;
+            }
+            Remove-LabVMDisk @removeLabVMDiskParams -ErrorAction Stop;
 
-        if ($PSCmdlet.ShouldProcess($Name)) {
+            if ($RemoveSwitch) {
 
-            ## Resolve the xVMHyperV resource parameters
-            $vmHyperVParams = Get-LabVirtualMachineProperty @PSBoundParameters;
-            $vmHyperVParams['Ensure'] = 'Absent';
-            ImportDscResource -ModuleName xHyper-V -ResourceName MSFT_xVMHyperV -Prefix VM;
-            InvokeDscResource -ResourceName VM -Parameters $vmHyperVParams -ErrorAction SilentlyContinue;
-        }
+                foreach ($switchName in $node.SwitchName) {
 
-    } #end process
-} #end function RemoveLabVirtualMachine
+                    $environmentSwitchName = Resolve-LabEnvironmentName -Name $switchName -ConfigurationData $ConfigurationData;
+                    Write-Verbose -Message ($localized.RemovingNodeConfiguration -f 'Virtual Switch', $environmentSwitchName);
+                    Remove-LabSwitch -Name $switchName -ConfigurationData $ConfigurationData;
+                }
+            }
+
+        } #end process
+    } #end function

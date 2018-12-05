@@ -139,7 +139,7 @@ function Start-LabConfiguration {
     }
     process {
 
-        WriteVerbose $localized.StartedLabConfiguration;
+        Write-Verbose -Message $localized.StartedLabConfiguration;
         $nodes = $ConfigurationData.AllNodes | Where-Object { $_.NodeName -ne '*' };
 
         ## There is an assumption here is all .mofs are in the same folder
@@ -163,7 +163,8 @@ function Start-LabConfiguration {
         } #end foreach node
 
         $currentNodeCount = 0;
-        foreach ($node in (Test-LabConfiguration -ConfigurationData $ConfigurationData)) {
+        foreach ($node in (Test-LabConfiguration -ConfigurationData $ConfigurationData -WarningAction SilentlyContinue)) {
+            ## Ignore Lability warnings during the test phase, e.g. existing switches and .mof files
 
             $currentNodeCount++;
             [System.Int16] $percentComplete = (($currentNodeCount / $nodes.Count) * 100) - 1;
@@ -171,34 +172,49 @@ function Start-LabConfiguration {
             Write-Progress -Id 42 -Activity $activity -PercentComplete $percentComplete;
             if ($node.IsConfigured -and $Force) {
 
-                WriteVerbose -Message ($localized.NodeForcedConfiguration -f $node.Name);
+                Write-Verbose -Message ($localized.NodeForcedConfiguration -f $node.Name);
 
                 $shouldProcessMessage = $localized.PerformingOperationOnTarget -f 'New-VM', $node.Name;
-                $verboseProcessMessage = GetFormattedMessage -Message ($localized.CreatingVM -f $node.Name);
+                $verboseProcessMessage = Get-FormattedMessage -Message ($localized.CreatingVM -f $node.Name);
                 if ($PSCmdlet.ShouldProcess($verboseProcessMessage, $shouldProcessMessage, $localized.ShouldProcessWarning)) {
-                    NewLabVM -Name $node.Name -ConfigurationData $ConfigurationData -Path $Path -NoSnapshot:$NoSnapshot -Credential $Credential;
+
+                    $newLabVirtualMachineParams = @{
+                        Name = $node.Name;
+                        ConfigurationData = $ConfigurationData;
+                        Path = $Path;
+                        NoSnapshot = $NoSnapshot;
+                        Credential = $Credential;
+                    }
+                    New-LabVirtualMachine @newLabVirtualMachineParams;
                 }
             }
             elseif ($node.IsConfigured) {
 
-                WriteVerbose ($localized.NodeAlreadyConfigured -f $node.Name);
+                Write-Verbose -Message ($localized.NodeAlreadyConfigured -f $node.Name);
             }
             else {
 
-                WriteVerbose -Message ($localized.NodeMissingOrMisconfigured -f $node.Name);
+                Write-Verbose -Message ($localized.NodeMissingOrMisconfigured -f $node.Name);
 
                 $shouldProcessMessage = $localized.PerformingOperationOnTarget -f 'Start-LabConfiguration', $node.Name;
-                $verboseProcessMessage = GetFormattedMessage -Message ($localized.CreatingVM -f $node.Name);
+                $verboseProcessMessage = Get-FormattedMessage -Message ($localized.CreatingVM -f $node.Name);
                 if ($PSCmdlet.ShouldProcess($verboseProcessMessage, $shouldProcessMessage, $localized.ShouldProcessWarning)) {
 
-                    NewLabVM -Name $node.Name -ConfigurationData $ConfigurationData -Path $Path -NoSnapshot:$NoSnapshot -Credential $Credential;
+                    $newLabVirtualMachineParams = @{
+                        Name = $node.Name;
+                        ConfigurationData = $ConfigurationData;
+                        Path = $Path;
+                        NoSnapshot = $NoSnapshot;
+                        Credential = $Credential;
+                    }
+                    [ref] $null = New-LabVirtualMachine @newLabVirtualMachineParams;
                 }
             }
 
         } #end foreach node
 
         Write-Progress -Id 42 -Activity $activity -Completed;
-        WriteVerbose $localized.FinishedLabConfiguration;
+        Write-Verbose -Message $localized.FinishedLabConfiguration;
 
     } #end process
 } #end function Start-LabConfiguration

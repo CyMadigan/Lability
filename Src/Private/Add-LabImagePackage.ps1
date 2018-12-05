@@ -34,10 +34,10 @@ function Add-LabImageWindowsPackage {
 
         foreach ($packageName in $Package) {
 
-            WriteVerbose ($localized.AddingWindowsPackage -f $packagename, $DestinationPath);
+            Write-Verbose -Message ($localized.AddingWindowsPackage -f $packagename, $DestinationPath);
             $packageFilename = '{0}.cab' -f $packageName;
             $packageFilePath = Join-Path -Path $PackagePath -ChildPath $packageFilename;
-            AddDiskImagePackage -Name $packageName -Path $packageFilePath -DestinationPath $DestinationPath;
+            Add-DiskImagePackage -Name $packageName -Path $packageFilePath -DestinationPath $DestinationPath;
 
             ## Check for language-specific package (Change from Server 2016 TP releases and Server 2016 Nano RTM)
             if ($PSBoundParameters.ContainsKey('PackageLocale')) {
@@ -48,13 +48,13 @@ function Add-LabImageWindowsPackage {
                 $localizedPackagePath = Join-Path -Path $localizedPackageDirectoryPath -ChildPath $localizedPackageFilename;
                 if (Test-Path -Path $localizedPackagePath -PathType Leaf) {
 
-                    WriteVerbose ($localized.AddingLocalizedWindowsPackage -f $localizedPackageName, $DestinationPath);
+                    Write-Verbose -Message ($localized.AddingLocalizedWindowsPackage -f $localizedPackageName, $DestinationPath);
                     $addDiskImagePackageParams = @{
                         Name = $localizedPackageName;
                         Path = $localizedPackagePath;
                         DestinationPath = $DestinationPath;
                     }
-                    AddDiskImagePackage @addDiskImagePackageParams;
+                    Add-DiskImagePackage @addDiskImagePackageParams;
                 }
             }
 

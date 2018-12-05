@@ -66,9 +66,9 @@ function Restore-Lab {
                         [System.Int32] $percentComplete = ($currentNodeCount / $nodes.Count) * 100;
                         $activity = $localized.ConfiguringNode -f $_.NodeDisplayName;
                         Write-Progress -Id 42 -Activity $activity -PercentComplete $percentComplete;
-                        WriteVerbose ($localized.RestoringVirtualMachineSnapshot -f $_.NodeDisplayName, $SnapshotName);
+                        Write-Verbose -Message ($localized.RestoringVirtualMachineSnapshot -f $_.NodeDisplayName, $SnapshotName);
 
-                        GetLabVMSnapshot -Name $_.NodeDisplayName -SnapshotName $SnapshotName | Restore-VMSnapshot;
+                        Get-LabVMSnapshot -Name $_.NodeDisplayName -SnapshotName $SnapshotName | Restore-VMSnapshot;
                     }
         }
         elseif ($runningNodes) {
@@ -89,9 +89,9 @@ function Restore-Lab {
                         [System.Int32] $percentComplete = ($currentNodeCount / $nodes.Count) * 100;
                         $activity = $localized.ConfiguringNode -f $_.NodeDisplayName;
                         Write-Progress -Id 42 -Activity $activity -PercentComplete $percentComplete;
-                        WriteVerbose ($localized.RestoringVirtualMachineSnapshot -f $_.NodeDisplayName,  $SnapshotName);
+                        Write-Verbose -Message ($localized.RestoringVirtualMachineSnapshot -f $_.NodeDisplayName,  $SnapshotName);
 
-                        GetLabVMSnapshot -Name $_.NodeDisplayName -SnapshotName $SnapshotName | Restore-VMSnapshot;
+                        Get-LabVMSnapshot -Name $_.NodeDisplayName -SnapshotName $SnapshotName | Restore-VMSnapshot;
                     }
 
             Write-Progress -Id 42 -Activity $activity -Completed;

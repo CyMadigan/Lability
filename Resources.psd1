@@ -38,6 +38,7 @@ ConvertFrom-StringData -StringData @'
     RemovingDiskImage                = Removing disk image '{0}'.
     ImportingExistingDiskImage       = Importing existing VHD(X) image '{0}'.
     CreatingDiskImage                = Creating disk image '{0}'.
+    CreatingDiskImageType            = Creating {0} disk image '{1}' of {2} MB.
     InitializingDiskImage            = Initializing disk image '{0}'.
     CreatingDiskPartition            = Creating '{0}' disk partition.
     FormattingDiskPartition          = Formatting '{0}' disk partition.
@@ -123,7 +124,7 @@ ConvertFrom-StringData -StringData @'
     ModuleFoundInPath                = Found module in '{0}'.
     CreatingQuickVM                  = Creating quick VM '{0}' using media '{1}'.
     CreatingVM                       = Creating VM '{0}'.
-    CreatingVMGeneration             = Creating generation '{0}' VM.
+    CreatingVMGeneration             = Creating Gen {0} virtual machine.
     RemovingVM                       = Removing VM '{0}'.
     ResettingVM                      = Resetting VM '{0}'.
     CreatingInternalVirtualSwitch    = Creating Internal '{0}' virtual switch.
@@ -169,6 +170,12 @@ ConvertFrom-StringData -StringData @'
     CompletedCompilationProcessing   = Completed processing in '{0}'.
     LoadingConfiguration             = Loading configuration '{0}'.
     TestingNodeStatus                = Node '{0}' reported status '{1}'; expecting 'Idle'.
+    CreatingAdditionalVhdFile        = Creating additional VHD/X '{0}'.
+    AddingAdditionalVhdFile          = Attaching VHD/X '{0}' to controller location '{1}'.
+    RemovingVhdFile                  = Removing VHD/X '{0}'.
+    LoadedModuleVersion              = Loaded {0} module version '{1}'.
+    ProcessingMofFile                = Processing DSC node configuration file '{0}'.
+    AutomaticCheckPointsNotSupported = Automatic checkpoints are only supported in Windows 10 "Fall Creators" update (1709 and later) builds.
 
     NoCertificateFoundWarning        = No '{0}' certificate was found.
     CannotLocateLcmFileWarning       = Cannot locate LCM configuration file '{0}'. No DSC Local Configuration Manager configuration will be applied.
@@ -190,6 +197,13 @@ ConvertFrom-StringData -StringData @'
     ComputerNotReachableWarning      = Computer '{0}' is not reachable.
     ExplicitOutputPathWarning        = Parameter 'OutputPath' was explicitly passed and is also defined in the 'ConfigurationParameters' hashtable. Using OutputPath '{0}'.
     ExplicitConfigurationDataWarning = Parameter 'ConfigurationData' was explicitly passed and is also defined in the 'ConfigurationParameters' hashtable. Using ConfigurationData '{0}'.
+    SkippingMetaConfigurationWarning = Skipping meta configuration file '{0}'.
+    CannotResolveMofModuleWarning    = Cannot resolve MOF module name and/or version of the instance defined at line {0}.
+    ModuleUsingMinimumVersionWarning = Module '{0}' definition is configured with the 'MinimumVersion' property. It is recommended to use the 'RequiredVersion' property instead.
+    ModuleMissingRequiredVerWarning  = Module '{0}' definition is missing 'RequiredVersion' property. It recommended to use the 'RequiredVersion' property.
+    MofModuleVersionMismatchWarning  = Module '{0}' version mismatch. The version '{1}' defined in the .mof file does not match the version '{2}' defined in the Lability configuration file.
+    ModuleMissingDefinitionWarning   = Missing resource '{0}' definition. The resource module '{0}' is defined in the node .mof but is not included in the lab configuration document.
+    IgnorePendingRebootWarning       = Skipping Dsc resource '{0}' as 'IgnorePendingReboot' switch specified.
 
     InvalidPathError                 = {0} path '{1}' is invalid.
     InvalidDestinationPathError      = Invalid destination path '{0}' specified.
@@ -236,5 +250,10 @@ ConvertFrom-StringData -StringData @'
     CannotResolveMediaIdError        = Cannot resolve node '{0}' source media Id.
     WaitLabDeploymentTimeoutError    = Waiting for lab deployment has timed out after '{0}'.
     NoConfigurationToCompileError    = No configurations to compile.
-    ResourceChecksumMismatchError   = Resource download '{0}' checksum does not match '{1}'.
+    ResourceChecksumMismatchError    = Resource download '{0}' checksum does not match '{1}'.
+    CannotLocateVhdError             = Cannot locate VHD/X file '{0}'.
+    CannotResoleVhdParameterError    = Cannot resolve VHD/X parameters. You cannot specify 'VhdPath' in combination with either 'Type' or 'MaximumSizeBytes'.
+    InvalidVhdTypeError              = Vhd type '{0}' is not supported with generation {1} virtual machines.
+    InvalidVhdSizeError              = Invalid VHD/X size '{0}' specified. Specify a size between 3145728 and 2190433320960 bytes.
+    DismVersionMismatchError         = Media '{0}' requires DISM version '{1}' or later installed to create the image.
 '@

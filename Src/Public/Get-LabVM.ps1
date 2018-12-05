@@ -32,13 +32,13 @@ function Get-LabVM {
             $node = Resolve-NodePropertyValue -NodeName $nodeName -ConfigurationData $ConfigurationData;
             $xVMParams = @{
                 Name = $node.NodeDisplayName;
-                VhdPath = ResolveLabVMDiskPath -Name $node.NodeDisplayName;;
+                VhdPath = Resolve-LabVMDiskPath -Name $node.NodeDisplayName;;
             }
 
             try {
 
-                ImportDscResource -ModuleName xHyper-V -ResourceName MSFT_xVMHyperV -Prefix VM;
-                $vm = GetDscResource -ResourceName VM -Parameters $xVMParams;
+                Import-LabDscResource -ModuleName xHyper-V -ResourceName MSFT_xVMHyperV -Prefix VM;
+                $vm = Get-LabDscResource -ResourceName VM -Parameters $xVMParams;
                 Write-Output -InputObject ([PSCustomObject] $vm);
             }
             catch {

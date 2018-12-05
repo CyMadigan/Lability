@@ -54,7 +54,7 @@ function New-LabImage {
         if ((Test-LabImage @PSBoundParameters) -and $Force) {
 
             $image = Get-LabImage @PSBoundParameters;
-            WriteVerbose ($localized.RemovingDiskImage -f $image.ImagePath);
+            Write-Verbose -Message ($localized.RemovingDiskImage -f $image.ImagePath);
             [ref] $null = Remove-Item -Path $image.ImagePath -Force -ErrorAction Stop;
         }
         elseif (Test-LabImage @PSBoundParameters) {
@@ -62,19 +62,58 @@ function New-LabImage {
             throw ($localized.ImageAlreadyExistsError -f $Id);
         }
 
-        $media = ResolveLabMedia @PSBoundParameters;
-        $mediaFileInfo = InvokeLabMediaImageDownload -Media $media;
+        ## Check Dism requirement (if present) #167
+        $media = Resolve-LabMedia @PSBoundParameters;
+        if ($null -ne $media.CustomData.MinimumDismVersion) {
+
+            $minimumDismVersion = $media.CustomData.MinimumDismVersion;
+            if ($labDefaults.DismVersion -lt $minimumDismVersion) {
+
+                throw ($localized.DismVersionMismatchError -f $Id, $minimumDismVersion.ToString());
+            }
+        }
+
         $hostDefaults = Get-ConfigurationData -Configuration Host;
 
         if ($media.MediaType -eq 'VHD') {
 
-            WriteVerbose ($localized.ImportingExistingDiskImage -f $media.Description);
+            $mediaFileInfo = Invoke-LabMediaImageDownload -Media $media;
+            Write-Verbose -Message ($localized.ImportingExistingDiskImage -f $media.Description);
             $imageName = $media.Filename;
             $imagePath = Join-Path -Path $hostDefaults.ParentVhdPath -ChildPath $imageName;
+
         } #end if VHD
+        elseif ($media.MediaType -eq 'NULL') {
+
+            Write-Verbose -Message ($localized.CreatingDiskImage -f $media.Description);
+            $imageName = '{0}.vhdx' -f $Id;
+            $imagePath = Join-Path -Path $hostDefaults.ParentVhdPath -ChildPath $imageName;
+
+            ## Create disk image and refresh PSDrives
+            $newEmptyDiskImageParams = @{
+                Path = $imagePath;
+                Force = $true;
+                ErrorAction = 'Stop';
+            }
+
+            if ($media.CustomData.DiskType) {
+
+                $newEmptyDiskImageParams['Type'] = $media.CustomData.DiskType;
+            }
+
+            if ($media.CustomData.DiskSize) {
+
+                $newEmptyDiskImageParams['Size'] = $media.CustomData.DiskSize;
+            }
+
+            $image = New-EmptyDiskImage @newEmptyDiskImageParams;
+
+        }
         else {
 
             ## Create VHDX
+            $mediaFileInfo = Invoke-LabMediaImageDownload -Media $media;
+
             if ($media.CustomData.PartitionStyle) {
 
                 ## Custom partition style has been defined so use that
@@ -90,7 +129,8 @@ function New-LabImage {
                 $partitionStyle = 'GPT';
             }
 
-            WriteVerbose ($localized.CreatingDiskImage -f $media.Description);
+            Write-Verbose -Message ($localized.CreatingDiskImage -f $media.Description);
+
             $imageName = '{0}.vhdx' -f $Id;
             $imagePath = Join-Path -Path $hostDefaults.ParentVhdPath -ChildPath $imageName;
 
@@ -128,7 +168,18 @@ function New-LabImage {
                     Force = $true;
                     ErrorAction = 'Stop';
                 }
-                $image = NewDiskImage @newDiskImageParams;
+
+                if ($media.CustomData.DiskType) {
+
+                    $newDiskImageParams['Type'] = $media.CustomData.DiskType;
+                }
+
+                if ($media.CustomData.DiskSize) {
+
+                    $newDiskImageParams['Size'] = $media.CustomData.DiskSize;
+                }
+
+                $image = New-DiskImage @newDiskImageParams;
                 [ref] $null = Get-PSDrive;
 
                 $expandLabImageParams['Vhd'] = $image;
@@ -160,7 +211,7 @@ function New-LabImage {
 
                 Expand-LabImage @expandLabImageParams;
 
-                ## Apply hotfixes (AddDiskImageHotfix)
+                ## Apply hotfixes (Add-DiskImageHotfix)
                 $addDiskImageHotfixParams = @{
                     Id = $Id;
                     Vhd = $image;
@@ -170,10 +221,10 @@ function New-LabImage {
 
                     $addDiskImageHotfixParams['ConfigurationData'] = $ConfigurationData;
                 }
-                AddDiskImageHotfix @addDiskImageHotfixParams;
+                Add-DiskImageHotfix @addDiskImageHotfixParams;
 
-                ## Configure boot volume (SetDiskImageBootVolume)
-                SetDiskImageBootVolume -Vhd $image -PartitionStyle $partitionStyle;
+                ## Configure boot volume (Set-DiskImageBootVolume)
+                Set-DiskImageBootVolume -Vhd $image -PartitionStyle $partitionStyle;
 
             }
             catch {
@@ -190,7 +241,7 @@ function New-LabImage {
 
             if ($imageCreationFailed -eq $true) {
 
-                WriteWarning ($localized.RemovingIncompleteImageWarning -f $imagePath);
+                Write-Warning -Message ($localized.RemovingIncompleteImageWarning -f $imagePath);
                 Remove-Item -Path $imagePath -Force;
             }
         } #end if ISO/WIM
