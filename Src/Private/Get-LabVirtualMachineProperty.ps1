@@ -5,13 +5,16 @@ function Get-LabVirtualMachineProperty {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)] [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [System.String] $Name,
 
-        [Parameter(Mandatory)] [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [System.String[]] $SwitchName,
 
-        [Parameter(Mandatory)] [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [System.String] $Media,
 
         [Parameter(Mandatory)]
@@ -26,7 +29,8 @@ function Get-LabVirtualMachineProperty {
         [Parameter(Mandatory)]
         [System.Int32] $ProcessorCount,
 
-        [Parameter()] [AllowNull()]
+        [Parameter()]
+        [AllowNull()]
         [System.String[]] $MACAddress,
 
         [Parameter()]
@@ -34,6 +38,9 @@ function Get-LabVirtualMachineProperty {
 
         [Parameter()]
         [System.Boolean] $GuestIntegrationServices,
+
+        [Parameter()]
+        [System.Boolean] $AutomaticCheckpoints,
 
         ## Specifies a PowerShell DSC configuration document (.psd1) containing the lab configuration.
         [Parameter(ValueFromPipelineByPropertyName)]
@@ -46,18 +53,18 @@ function Get-LabVirtualMachineProperty {
         ## Resolve the media to determine whether we require a Generation 1 or 2 VM..
         if ($PSBoundParameters.ContainsKey('ConfigurationData')) {
 
-            $labMedia = ResolveLabMedia -Id $Media -ConfigurationData $ConfigurationData;
+            $labMedia = Resolve-LabMedia -Id $Media -ConfigurationData $ConfigurationData;
             $labImage = Get-LabImage -Id $Media -ConfigurationData $ConfigurationData;
         }
         else {
 
-            $labMedia = ResolveLabMedia -Id $Media;
+            $labMedia = Resolve-LabMedia -Id $Media;
             $labImage = Get-LabImage -Id $Media;
         }
         if (-not $labImage) {
 
             ## Should only trigger during a Reset-VM where parent image is not available?!
-            ## It will be downloaded during any NewLabVM calls..
+            ## It will be downloaded during any New-LabVirtualMachine calls..
             $labImage = @{ Generation = 'VHDX'; }
         }
         $labMediaArchitecture = $labMedia.Architecture;
@@ -107,7 +114,23 @@ function Get-LabVirtualMachineProperty {
             [ref] $null = $PSBoundParameters.Remove('GuestIntegrationServices');
         }
 
-        $vhdPath = ResolveLabVMDiskPath -Name $Name -Generation $labImage.Generation;
+        if ($PSBoundParameters.ContainsKey('AutomaticCheckpoints')) {
+
+            ## Always remove 'AutomaticCheckpoints' property (#294)
+            [ref] $null = $PSBoundParameters.Remove('AutomaticCheckpoints');
+
+            ## Automatic checkpoints were only introduced in 1709 (and later) builds.
+            if (Test-WindowsBuildNumber -MinimumVersion 16299) {
+
+                [ref] $null = $PSBoundParameters.Add('AutomaticCheckpointsEnabled', $AutomaticCheckpoints);
+            }
+            else {
+
+                Write-Debug -Message ($localized.AutomaticCheckPointsNotSupported);
+            }
+        }
+
+        $vhdPath = Resolve-LabVMDiskPath -Name $Name -Generation $labImage.Generation;
 
         [ref] $null = $PSBoundParameters.Remove('Media');
         [ref] $null = $PSBoundParameters.Remove('ConfigurationData');
@@ -117,4 +140,4 @@ function Get-LabVirtualMachineProperty {
         return $PSBoundParameters;
 
     } #end process
-} #end function Get-LabVirtualMachineProperty
+} #end function

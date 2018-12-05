@@ -34,14 +34,14 @@ function Get-LabImage {
     process {
 
         $hostDefaults = Get-ConfigurationData -Configuration Host;
-        $parentVhdPath = ResolvePathEx -Path $hostDefaults.ParentVhdPath;
+        $parentVhdPath = Resolve-PathEx -Path $hostDefaults.ParentVhdPath;
 
         if ($PSBoundParameters.ContainsKey('Id')) {
 
             ## We have an Id. so resolve that
             try {
 
-                $labMedia = ResolveLabMedia @PSBoundParameters;
+                $labMedia = Resolve-LabMedia @PSBoundParameters;
             }
             catch {
 

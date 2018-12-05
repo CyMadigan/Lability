@@ -42,6 +42,9 @@ function Test-LabVirtualMachine {
         [Parameter()]
         [System.Boolean] $GuestIntegrationServices,
 
+        [Parameter()]
+        [System.Boolean] $AutomaticCheckpoints,
+
         ## Specifies a PowerShell DSC configuration document (.psd1) containing the lab configuration.
         [Parameter(ValueFromPipelineByPropertyName)]
         [System.Collections.Hashtable]
@@ -51,12 +54,12 @@ function Test-LabVirtualMachine {
     process {
 
         $vmHyperVParams = Get-LabVirtualMachineProperty @PSBoundParameters;
-        ImportDscResource -ModuleName xHyper-V -ResourceName MSFT_xVMHyperV -Prefix VM;
+        Import-LabDscResource -ModuleName xHyper-V -ResourceName MSFT_xVMHyperV -Prefix VM;
 
         try {
 
             ## xVMHyperV\Test-TargetResource throws if the VHD doesn't exist?
-            return (TestDscResource -ResourceName VM -Parameters $vmHyperVParams -ErrorAction SilentlyContinue);
+            return (Test-LabDscResource -ResourceName VM -Parameters $vmHyperVParams -ErrorAction SilentlyContinue);
         }
         catch {
 
@@ -64,4 +67,4 @@ function Test-LabVirtualMachine {
         }
 
     } #end process
-} #end function Test-LabVirtualMachine
+} #end function

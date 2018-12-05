@@ -12,11 +12,13 @@ function Assert-LabConfigurationMof {
         $ConfigurationData,
 
         ## Lab vm/node name
-        [Parameter(ValueFromPipelineByPropertyName)] [ValidateNotNullOrEmpty()]
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
         [System.String] $Name,
 
         ## Path to .MOF files created from the DSC configuration
-        [Parameter(ValueFromPipelineByPropertyName)] [ValidateNotNullOrEmpty()]
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
         [System.String] $Path = (Get-LabHostDscConfigurationPath),
 
         ## Ignores missing MOF file
@@ -29,12 +31,12 @@ function Assert-LabConfigurationMof {
         $node = $ConfigurationData.AllNodes | Where-Object { $_.NodeName -eq $Name };
 
         $mofPath = Join-Path -Path $Path -ChildPath ('{0}.mof' -f $node.NodeName);
-        WriteVerbose ($localized.CheckingForNodeFile -f $mofPath);
+        Write-Verbose -Message ($localized.CheckingForNodeFile -f $mofPath);
         if (-not (Test-Path -Path $mofPath -PathType Leaf)) {
 
             if ($SkipMofCheck) {
 
-                WriteWarning ($localized.CannotLocateMofFileError -f $mofPath)
+                Write-Warning -Message ($localized.CannotLocateMofFileError -f $mofPath)
             }
             else {
 
@@ -43,10 +45,10 @@ function Assert-LabConfigurationMof {
         }
 
         $metaMofPath = Join-Path -Path $Path -ChildPath ('{0}.meta.mof' -f $node.NodeName);
-        WriteVerbose ($localized.CheckingForNodeFile -f $metaMofPath);
+        Write-Verbose -Message ($localized.CheckingForNodeFile -f $metaMofPath);
         if (-not (Test-Path -Path $metaMofPath -PathType Leaf)) {
 
-            WriteWarning ($localized.CannotLocateLCMFileWarning -f $metaMofPath);
+            Write-Warning -Message ($localized.CannotLocateLCMFileWarning -f $metaMofPath);
         }
 
     } #end process

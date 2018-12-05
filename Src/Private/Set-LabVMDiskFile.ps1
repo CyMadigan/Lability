@@ -43,6 +43,10 @@ function Set-LabVMDiskFile {
         [Parameter(ValueFromPipelineByPropertyName)]
         [System.String] $DefaultShell,
 
+        ## WSMan maximum envelope size
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [System.Int32] $MaxEnvelopeSizeKb = 1024,
+
         ## Media-defined product key
         [Parameter(ValueFromPipelineByPropertyName)]
         [System.String] $ProductKey
@@ -62,7 +66,7 @@ function Set-LabVMDiskFile {
         }
         $vhdPath = Resolve-LabVMGenerationDiskPath @resolveLabVMGenerationDiskPathParams;
 
-        WriteVerbose -Message ($localized.MountingDiskImage -f $VhdPath);
+        Write-Verbose -Message ($localized.MountingDiskImage -f $VhdPath);
         $vhd = Mount-Vhd -Path $vhdPath -Passthru -Confirm:$false;
         [ref] $null = Get-PSDrive;
         $vhdDriveLetter = Get-Partition -DiskNumber $vhd.DiskNumber |
@@ -72,12 +76,12 @@ function Set-LabVMDiskFile {
 
         try {
 
-            SetLabVMDiskFileResource @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
-            SetLabVMDiskFileBootstrap @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
-            SetLabVMDiskFileUnattendXml @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
-            SetLabVMDiskFileMof @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
-            SetLabVMDiskFileCertificate @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
-            SetLabVMDiskFileModule @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
+            Set-LabVMDiskFileResource @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
+            Set-LabVMDiskFileBootstrap @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
+            Set-LabVMDiskFileUnattendXml @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
+            Set-LabVMDiskFileMof @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
+            Set-LabVMDiskFileCertificate @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
+            Set-LabVMDiskFileModule @PSBoundParameters -VhdDriveLetter $vhdDriveLetter;
         }
         catch {
 
@@ -88,7 +92,7 @@ function Set-LabVMDiskFile {
         finally {
 
             ## Ensure the VHD is dismounted (#185)
-            WriteVerbose -Message ($localized.DismountingDiskImage -f $VhdPath);
+            Write-Verbose -Message ($localized.DismountingDiskImage -f $VhdPath);
             Dismount-Vhd -Path $VhdPath -Confirm:$false;
         }
 

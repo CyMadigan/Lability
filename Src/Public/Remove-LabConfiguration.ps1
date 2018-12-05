@@ -35,7 +35,7 @@ function Remove-LabConfiguration {
     )
     process {
 
-        WriteVerbose $localized.StartedLabConfiguration;
+        Write-Verbose -Message $localized.StartedLabConfiguration;
         $nodes = $ConfigurationData.AllNodes | Where-Object { $_.NodeName -ne '*' };
         $currentNodeCount = 0;
         foreach ($node in $nodes) {
@@ -48,16 +48,16 @@ function Remove-LabConfiguration {
 
             ##TODO: Should this not ensure that VMs are powered off
             $shouldProcessMessage = $localized.PerformingOperationOnTarget -f 'Remove-Lab', $nodeProperties.NodeDisplayName;
-            $verboseProcessMessage = GetFormattedMessage -Message ($localized.RemovingVM -f $nodeProperties.NodeDisplayName);
+            $verboseProcessMessage = Get-FormattedMessage -Message ($localized.RemovingVM -f $nodeProperties.NodeDisplayName);
             if ($PSCmdlet.ShouldProcess($verboseProcessMessage, $shouldProcessMessage, $localized.ShouldProcessWarning)) {
 
-                RemoveLabVM -Name $node.NodeName -ConfigurationData $ConfigurationData -RemoveSwitch:$RemoveSwitch -Confirm:$false;
+                Remove-LabVirtualMachine -Name $node.NodeName -ConfigurationData $ConfigurationData -RemoveSwitch:$RemoveSwitch -Confirm:$false;
             }
 
         } #end foreach node
 
         Write-Progress -Id 42 -Activity $activity -Completed;
-        WriteVerbose $localized.FinishedLabConfiguration;
+        Write-Verbose -Message $localized.FinishedLabConfiguration;
 
     } #end process
 } #end function Remove-LabConfiguration
